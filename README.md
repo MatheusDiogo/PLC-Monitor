@@ -1,35 +1,34 @@
 # Monitor de CLPs — Prova Prática
 
-Aplicação em Python (Tkinter + python-snap7) para o professor acompanhar, em tempo real, os CLPs Siemens de todas as bancadas.
+Aplicação em Python (CustomTkinter + asyncua/OPC UA) para o professor acompanhar, em tempo real, os CLPs Siemens S7-1200 (CPU 1214C) de todas as bancadas.
+
+Os CLPs **não são cadastrados manualmente**: o app varre a sub-rede local em busca de servidores OPC UA (porta 4840) e o usuário escolhe quais conectar. Pré-requisito: o servidor OPC UA de cada CPU 1214C precisa estar habilitado na TIA Portal.
 
 ## Estrutura do projeto
 
 ```
 PLC-Monitor/
-├── src/plc_monitor/         # pacote principal (pip install -e .)
-│   ├── app.py               # entry-point main()
-│   ├── __main__.py          # python -m plc_monitor
-│   ├── config/settings.py   # REFRESH_MS, CONFIG_FILE, resource_path (PyInstaller)
+├── src/plc_monitor/           # pacote principal (pip install -e .)
+│   ├── app.py                  # entry-point main()
+│   ├── __main__.py             # python -m plc_monitor
+│   ├── config/settings.py      # REFRESH_MS, CONFIG_FILE, portas/timeouts de varredura
 │   ├── core/
-│   │   ├── models.py        # Tag, PLCConfig
-│   │   ├── database.py      # SQLite :memory:
-│   │   └── plc/client.py    # PLCConnection (thread polling)
+│   │   ├── models.py           # PLCConfig
+│   │   ├── database.py         # SQLite :memory: (reservado para leitura de tags — fase futura)
+│   │   ├── discovery/scanner.py# varredura da rede por servidores OPC UA
+│   │   └── plc/opcua_client.py # OPCUAConnection (thread de conexão/keepalive)
 │   ├── services/
-│   │   ├── config_store.py  # load/save JSON (data/clps_config.json)
-│   │   └── export.py        # export CSV
-│   ├── ui/                  # equivale a routes/templates
-│   │   ├── main_window.py   # PLCMonitorApp
-│   │   ├── dialogs.py       # AddPLCDialog, TagDialog
-│   │   ├── dashboard.py     # DashboardWindow
-│   │   └── utils.py         # resolve_hostname
-│   └── static/icons/        # assets (equiv. a static/)
-├── data/                    # runtime: clps_config.json (não versionado)
-├── build.spec               # PyInstaller onefile
+│   │   ├── config_store.py     # load/save JSON (data/clps_config.json)
+│   │   └── export.py           # export CSV (reservado para fase futura)
+│   ├── ui/
+│   │   ├── main_window.py      # MainWindow: descoberta + lista de conectados
+│   │   └── utils.py            # resolve_hostname
+│   └── static/icons/           # assets
+├── data/                       # runtime: clps_config.json (não versionado)
+├── build.spec                  # PyInstaller onefile
 ├── pyproject.toml
 └── requirements.txt
 ```
-
-`ui/` = camada de rotas/views, `static/` = assets, `data/` = persistência, `core/` = domínio.
 
 ## Como rodar (modo desenvolvimento)
 
@@ -41,22 +40,17 @@ python -m plc_monitor
 plc-monitor
 ```
 
+Na janela: escolha a sub-rede (detectada automaticamente), clique em "Buscar CLPs na rede", marque os CLPs encontrados e clique em "Conectar selecionados".
+
 ## Gerando o executável (.exe)
 
 ```bash
 pip install pyinstaller
 pyinstaller build.spec
-# onefile alternativo:
-pyinstaller --onefile --noconsole --name MonitorCLPs --add-data "src/plc_monitor/static;plc_monitor/static" src/plc_monitor/__main__.py
 ```
 
 O `clps_config.json` é salvo em `data/` em dev e ao lado do `.exe` quando empacotado (via `CONFIG_FILE` em `settings.py` com `sys._MEIPASS`).
 
-Se o `snap7.dll` não for encontrado no exe:
-```bash
-pyinstaller --onefile --noconsole --name MonitorCLPs --add-binary "caminho/para/snap7.dll;." --add-data "src/plc_monitor/static;plc_monitor/static" src/plc_monitor/__main__.py
-```
+## Roadmap
 
-## Migração
-
-A pasta antiga `app/` foi removida — use `src/plc_monitor/`.
+Esta fase cobre apenas descoberta e conexão dos CLPs. Leitura de tags (valores do CLP via OPC UA), dashboard por CLP e exportação de dados ficam para as próximas fases.

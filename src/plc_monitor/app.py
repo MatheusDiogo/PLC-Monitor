@@ -1,12 +1,9 @@
-import tkinter as tk
-
-from plc_monitor.ui.main_window import PLCMonitorApp
+from plc_monitor.ui.main_window import MainWindow
 
 
 def main():
-    root = tk.Tk()
-    PLCMonitorApp(root)
-    root.mainloop()
+    app = MainWindow()
+    app.mainloop()
 
 
 if __name__ == "__main__":

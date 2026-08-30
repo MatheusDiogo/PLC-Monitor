@@ -7,7 +7,7 @@ name = "plc-monitor"
 version = "1.0.0"
 description = "Monitor de CLPs — Prova Prática"
 requires-python = ">=3.9"
-dependencies = ["python-snap7>=1.3"]
+dependencies = ["asyncua>=1.0", "customtkinter>=5.2", "psutil>=5.9"]
 
 [project.scripts]
 plc-monitor = "plc_monitor.app:main"

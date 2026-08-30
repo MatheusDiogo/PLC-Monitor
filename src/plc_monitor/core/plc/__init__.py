@@ -1,3 +1,3 @@
-from plc_monitor.core.plc.client import PLCConnection
+from plc_monitor.core.plc.opcua_client import OPCUAConnection
 
-__all__ = ["PLCConnection"]
+__all__ = ["OPCUAConnection"]

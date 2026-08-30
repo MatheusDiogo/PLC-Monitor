@@ -3,6 +3,10 @@ import sys
 
 REFRESH_MS = 1000
 POLL_INTERVAL = 1.0
+DEFAULT_OPCUA_PORT = 4840
+SCAN_TIMEOUT = 0.3
+OPCUA_PROBE_TIMEOUT = 2.5
+SCAN_MAX_WORKERS = 100
 
 def resource_path(relative):
     if hasattr(sys, "_MEIPASS"):
