@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Monitor de CLPs</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">Ψ</div>
+      <div>
+        <h1>PLC MONITOR</h1>
+        <p class="subtitle">LABORATÓRIO DE CONTROLE · OPC-UA</p>
+      </div>
+    </div>
+    <div class="counters">
+      <div class="counter">
+        <span id="online-count" class="counter-value good">0</span>
+        <span class="counter-label">ONLINE</span>
+      </div>
+      <div class="counter">
+        <span id="offline-count" class="counter-value bad">0</span>
+        <span class="counter-label">OFFLINE</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="discovery-bar">
+    <label for="subnet-select">Sub-rede:</label>
+    <select id="subnet-select"></select>
+    <button id="scan-button" class="scan-btn">VARRER REDE</button>
+    <span id="scan-status" class="scan-status"></span>
+  </section>
+
+  <main id="cards-area" class="cards-area"></main>
+
+  <template id="card-template">
+    <article class="card">
+      <div class="card-header">
+        <h2 class="plc-name"></h2>
+        <span class="status-pill"><span class="dot"></span><span class="status-text"></span></span>
+      </div>
+      <p class="plc-ip"></p>
+      <div class="student-row">
+        <div class="avatar"></div>
+        <div class="student-info">
+          <span class="student-label">ALUNO</span>
+          <input class="student-input" type="text" placeholder="Nome do aluno" />
+        </div>
+      </div>
+      <p class="offline-msg"></p>
+      <div class="chart-block">
+        <p class="chart-label">
+          <span class="dash green">—</span> SAÍDA Y
+          <span class="dash amber">—</span> SETPOINT
+        </p>
+        <canvas class="chart chart-y" height="90"></canvas>
+      </div>
+      <div class="chart-block">
+        <p class="chart-label"><span class="dash blue">—</span> ENTRADA (Ulim)</p>
+        <canvas class="chart chart-u" height="90"></canvas>
+      </div>
+      <div class="tiles-row">
+        <div class="tile">
+          <span class="tile-value tile-overshoot">—</span>
+          <span class="tile-label">OVERSHOOT</span>
+        </div>
+        <div class="tile">
+          <span class="tile-value tile-peak">—</span>
+          <span class="tile-label">T. PICO</span>
+        </div>
+        <div class="tile">
+          <span class="tile-value tile-settle">—</span>
+          <span class="tile-label">T. ACOMOD.</span>
+        </div>
+        <div class="tile">
+          <span class="tile-value tile-error">—</span>
+          <span class="tile-label">ERRO EST.</span>
+        </div>
+        <div class="tile">
+          <span class="tile-value tile-iae">—</span>
+          <span class="tile-label">IAE</span>
+        </div>
+      </div>
+      <button class="remove-btn">Remover</button>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

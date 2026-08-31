@@ -10,6 +10,7 @@ class PLCConfig:
     endpoint_url: str = ""
     application_uri: str = ""
     network: str = ""
+    student: str = ""
 
     def to_dict(self):
         return self.__dict__.copy()
@@ -24,4 +25,5 @@ class PLCConfig:
             endpoint_url=d.get("endpoint_url", ""),
             application_uri=d.get("application_uri", ""),
             network=d.get("network", ""),
+            student=d.get("student", ""),
         )
