@@ -93,6 +93,7 @@ class Api:
                     "ip": plc.ip,
                     "student": plc.student,
                     "online": is_online,
+                    "t": conn.last_t if conn else [],
                     "y": conn.last_y if conn else [],
                     "setpoint": conn.last_setpoint_series if conn else [],
                     "u": conn.last_u if conn else [],
@@ -100,6 +101,7 @@ class Api:
                     "overshoot_pct": metrics.overshoot_pct if metrics else None,
                     "peak_time_s": metrics.peak_time_s if metrics else None,
                     "settling_time_s": metrics.settling_time_s if metrics else None,
+                    "settling_time_s_5pct": metrics.settling_time_s_5pct if metrics else None,
                     "steady_state_error_pct": metrics.steady_state_error_pct if metrics else None,
                     "iae": conn.last_iae if conn else None,
                 }

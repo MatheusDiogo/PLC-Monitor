@@ -31,12 +31,18 @@ function formatElapsed(seconds) {
 
 function formatTick(value) {
   const abs = Math.abs(value);
-  const decimals = abs !== 0 && abs < 10 ? 1 : 0;
+  const decimals = abs !== 0 && abs < 1 ? 3 : abs < 10 ? 1 : 0;
   return value.toFixed(decimals);
 }
 
-function drawChart(canvas, series) {
+function formatTimeTick(seconds) {
+  const decimals = seconds !== 0 && seconds < 10 ? 1 : 0;
+  return `${seconds.toFixed(decimals)}s`;
+}
+
+function drawChart(canvas, times, series) {
   const axisWidth = 36;
+  const axisHeight = 16;
   const width = canvas.clientWidth;
   const height = canvas.clientHeight || 90;
   if (canvas.width !== width) canvas.width = width;
@@ -47,12 +53,15 @@ function drawChart(canvas, series) {
   const plotX0 = axisWidth;
   const plotWidth = Math.max(1, width - axisWidth);
   const padding = 6;
-  const usableH = height - 2 * padding;
+  const usableH = height - axisHeight - 2 * padding;
 
   const allValues = series.flatMap((s) => s.values || []);
   const vmin = allValues.length ? Math.min(...allValues) : 0;
   const vmax = allValues.length ? Math.max(...allValues) : 1;
   const span = vmax - vmin || 1;
+
+  const hasTimes = times && times.length >= 2;
+  const tmin = hasTimes ? times[0] : 0;
 
   ctx.strokeStyle = "#232a35";
   ctx.lineWidth = 1;
@@ -73,9 +82,24 @@ function drawChart(canvas, series) {
 
   if (allValues.length < 2) return;
 
+  const pointCount = Math.max(...series.map((s) => (s.values ? s.values.length : 0)));
+  const stepX = plotWidth / (pointCount - 1);
+
+  if (hasTimes) {
+    const xAxisY = padding + usableH;
+    const xTicks = 4;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    for (let i = 0; i <= xTicks; i++) {
+      const idx = Math.round(((pointCount - 1) * i) / xTicks);
+      const x = plotX0 + idx * stepX;
+      const elapsed = times[Math.min(idx, times.length - 1)] - tmin;
+      ctx.fillText(formatTimeTick(elapsed), Math.min(width - 12, Math.max(plotX0 + 12, x)), xAxisY + 3);
+    }
+  }
+
   for (const { values, color } of series) {
     if (!values || values.length < 2) continue;
-    const stepX = plotWidth / (values.length - 1);
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -143,15 +167,17 @@ function updateCard(node, card) {
   }
 
   const style = getComputedStyle(document.documentElement);
-  drawChart(node.querySelector(".chart-y"), [
+  drawChart(node.querySelector(".chart-y"), card.t, [
     { values: card.y, color: style.getPropertyValue("--chart-green") },
     { values: card.setpoint, color: style.getPropertyValue("--chart-amber") },
   ]);
-  drawChart(node.querySelector(".chart-u"), [{ values: card.u, color: style.getPropertyValue("--chart-blue") }]);
+  drawChart(node.querySelector(".chart-u"), card.t, [{ values: card.u, color: style.getPropertyValue("--chart-blue") }]);
 
   node.querySelector(".tile-overshoot").textContent = card.overshoot_pct != null ? `${card.overshoot_pct}%` : "—";
   node.querySelector(".tile-peak").textContent = card.peak_time_s != null ? `${card.peak_time_s}s` : "—";
   node.querySelector(".tile-settle").textContent = card.settling_time_s != null ? `${card.settling_time_s}s` : "—";
+  node.querySelector(".tile-settle-5").textContent =
+    card.settling_time_s_5pct != null ? `${card.settling_time_s_5pct}s` : "—";
   node.querySelector(".tile-error").textContent =
     card.steady_state_error_pct != null ? `${card.steady_state_error_pct}%` : "—";
   node.querySelector(".tile-iae").textContent = card.iae != null ? card.iae.toFixed(2) : "—";

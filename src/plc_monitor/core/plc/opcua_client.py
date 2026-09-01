@@ -6,14 +6,15 @@ from asyncua.sync import Client
 from plc_monitor.config.settings import (
     BROWSE_MAX_DEPTH,
     DATA_OBJECT_NAME,
-    HISTORY_MAX_SECONDS,
     SETTLING_BAND_PCT,
+    SETTLING_BAND_PCT_5,
     SETTLING_MIN_VIOLATION_SAMPLES,
     STEP_DETECT_EPSILON,
     TAG_FECHADA,
     TAG_IAE,
     TAG_INPUT,
     TAG_OUTPUT,
+    TAG_SEL0,
     TAG_SETPOINT,
 )
 from plc_monitor.core.metrics import compute_step_response_metrics
@@ -91,7 +92,7 @@ class OPCUAConnection:
             data_node = _find_child_by_name(self._client.get_objects_node(), DATA_OBJECT_NAME)
             if not data_node:
                 return
-            for tag_name in (TAG_OUTPUT, TAG_SETPOINT, TAG_INPUT, TAG_IAE, TAG_FECHADA):
+            for tag_name in (TAG_OUTPUT, TAG_SETPOINT, TAG_INPUT, TAG_IAE, TAG_FECHADA, TAG_SEL0):
                 child = _find_child_by_name(data_node, tag_name, max_depth=1)
                 if child:
                     self._tag_nodes[tag_name] = child
@@ -146,6 +147,14 @@ class OPCUAConnection:
             except Exception:
                 pass
 
+        sel0 = None
+        sel0_node = self._tag_nodes.get(TAG_SEL0)
+        if sel0_node:
+            try:
+                sel0 = bool(sel0_node.read_value())
+            except Exception:
+                pass
+
         self._set_status("Online")
         now = time.time()
 
@@ -153,37 +162,42 @@ class OPCUAConnection:
             self._last_setpoint is not None and abs(setpoint - self._last_setpoint) > STEP_DETECT_EPSILON
         )
         fechada_rising = fechada and self._last_fechada is False
-        if setpoint_stepped or fechada_rising:
-            self._t_buffer = []
-            self._y_buffer = []
-            self._setpoint_buffer = []
-            self._u_buffer = []
         self._last_setpoint = setpoint
         if fechada is not None:
             self._last_fechada = fechada
 
-        self._t_buffer.append(now)
-        self._y_buffer.append(y)
-        self._setpoint_buffer.append(setpoint)
-        self._u_buffer.append(u)
+        if sel0 is not False:
+            if setpoint_stepped or fechada_rising:
+                self._t_buffer = []
+                self._y_buffer = []
+                self._setpoint_buffer = []
+                self._u_buffer = []
 
-        cutoff = now - HISTORY_MAX_SECONDS
-        while len(self._t_buffer) > 1 and self._t_buffer[0] < cutoff:
-            self._t_buffer.pop(0)
-            self._y_buffer.pop(0)
-            self._setpoint_buffer.pop(0)
-            self._u_buffer.pop(0)
+            self._t_buffer.append(now)
+            self._y_buffer.append(y)
+            self._setpoint_buffer.append(setpoint)
+            self._u_buffer.append(u)
 
         self.last_data_at = now
-        self.last_metrics = compute_step_response_metrics(
-            self._t_buffer, self._y_buffer, setpoint, SETTLING_BAND_PCT, SETTLING_MIN_VIOLATION_SAMPLES
-        )
+        if fechada is not False and sel0 is not False:
+            self.last_metrics = compute_step_response_metrics(
+                self._t_buffer,
+                self._y_buffer,
+                setpoint,
+                SETTLING_BAND_PCT,
+                SETTLING_MIN_VIOLATION_SAMPLES,
+                SETTLING_BAND_PCT_5,
+            )
 
     def _set_status(self, status):
         if status != self._last_status:
             self._last_status = status
             if self.on_status_change:
                 self.on_status_change(self.config.id, status)
+
+    @property
+    def last_t(self):
+        return list(self._t_buffer)
 
     @property
     def last_y(self):
